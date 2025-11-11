@@ -1,161 +1,67 @@
 <!doctype html>
 <html lang="th">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>AmpJiew Digital Mixer — Plain</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
-  body{ background:#121418; }
-  /* vertical slider support */
-  input[type=range][data-vertical]{ writing-mode: bt-lr; -webkit-appearance: slider-vertical; width: 28px; height: 160px; }
-  .panel{ background:#1b1e24; border:1px solid #2a2f3a; }
-  .cell{ background:#111318; border:1px solid #2a2f3a; }
-</style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Digital Mixer + BLE (Prototype)</title>
+<link rel="stylesheet" href="style.css" />
 </head>
-<body class="text-slate-200">
-  <div class="max-w-[1400px] mx-auto p-3 space-y-3">
-    <!-- Top bar -->
-    <div class="flex items-center gap-2 text-xs">
-      <div class="px-3 py-2 rounded panel">Mixer</div>
-      <div class="px-3 py-2 rounded panel">Channel</div>
-      <div class="ml-auto px-3 py-2 rounded bg-cyan-600 text-white" id="fake-connect">เชื่อมต่อ (จำลอง)</div>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">X-AIR Style Mixer (Demo)</div>
+    <div class="actions">
+      <button id="btnStart">เริ่มระบบเสียง</button>
+      <button id="btnBLE">เชื่อมต่อบลูทูธ</button>
+      <label class="filebtn">
+        โหลดเสียงเข้าแชนแนล…
+        <input id="fileInput" type="file" accept="audio/*" multiple />
+      </label>
     </div>
+  </header>
 
-    <!-- Selected channel module -->
-    <div class="p-3 rounded panel">
-      <div class="text-sm font-semibold mb-2">CH1 — MODULES</div>
-      <div class="grid grid-cols-4 gap-4">
-        <div>
-          <div class="text-xs mb-1">Noise Gate</div>
-          <div class="h-24 rounded cell flex items-center justify-center text-slate-400">(Curve)</div>
-          <div class="grid grid-cols-3 gap-2 mt-2 text-[11px]">
-            <div><div>Threshold</div><input type="range" min="0" max="1" step="0.001" class="w-full"></div>
-            <div><div>GR</div><input type="range" min="0" max="1" step="0.001" class="w-full"></div>
-            <div><div>Range</div><input type="range" min="0" max="1" step="0.001" class="w-full"></div>
-          </div>
-        </div>
-        <div>
-          <div class="text-xs mb-1">Parametric EQ</div>
-          <div class="h-24 rounded cell flex items-center justify-center text-slate-400">(EQ Graph)</div>
-          <div class="grid grid-cols-3 gap-2 mt-2 text-[11px]">
-            <div><div>Gain</div><input type="range" min="-1" max="1" step="0.001" class="w-full"></div>
-            <div><div>Freq</div><input type="range" min="40" max="14000" step="1" class="w-full"></div>
-            <div><div>Q</div><input type="range" min="0.4" max="8" step="0.001" class="w-full"></div>
-          </div>
-        </div>
-        <div>
-          <div class="text-xs mb-1">Compressor</div>
-          <div class="h-24 rounded cell flex items-center justify-center text-slate-400">(Knee)</div>
-          <div class="grid grid-cols-3 gap-2 mt-2 text-[11px]">
-            <div><div>Thresh</div><input type="range" min="0" max="1" step="0.001" class="w-full"></div>
-            <div><div>Ratio</div><input type="range" min="1" max="20" step="0.1" class="w-full"></div>
-            <div><div>Make-up</div><input type="range" min="0" max="1" step="0.001" class="w-full"></div>
-          </div>
-        </div>
-        <div>
-          <div class="text-xs mb-1">AUX Sends</div>
-          <div class="h-24 rounded cell flex items-center justify-center text-slate-400">(Buses)</div>
-          <div class="grid grid-cols-2 gap-2 mt-2 text-[11px]">
-            <div><div>FX1</div><input type="range" min="0" max="1" step="0.001" class="w-full"></div>
-            <div><div>Pre-Fader</div><input type="checkbox" class="mt-1"></div>
-          </div>
-        </div>
+  <section class="racks">
+    <div class="rack" id="gateRack">
+      <h3>Noise Gate</h3>
+      <label>Threshold <input type="range" id="gateThreshold" min="-100" max="0" step="1" value="-55"></label>
+      <label>Attack (ms) <input type="range" id="gateAttack" min="0" max="200" step="1" value="3"></label>
+      <label>Hold (ms) <input type="range" id="gateHold" min="0" max="500" step="1" value="30"></label>
+      <label>Release (ms) <input type="range" id="gateRelease" min="10" max="1000" step="1" value="150"></label>
+    </div>
+    <div class="rack" id="compRack">
+      <h3>Compressor</h3>
+      <label>Threshold (dB) <input type="range" id="compThreshold" min="-100" max="0" step="1" value="-24"></label>
+      <label>Ratio <input type="range" id="compRatio" min="1" max="20" step="0.1" value="3"></label>
+      <label>Attack (s) <input type="range" id="compAttack" min="0" max="1" step="0.005" value="0.003"></label>
+      <label>Release (s) <input type="range" id="compRelease" min="0" max="1" step="0.005" value="0.25"></label>
+      <label>Knee (dB) <input type="range" id="compKnee" min="0" max="40" step="1" value="5"></label>
+    </div>
+    <div class="rack" id="eqRack">
+      <h3>EQ</h3>
+      <label>Low (80Hz) <input type="range" data-eq="low" min="-15" max="15" step="0.5" value="0"></label>
+      <label>Mid (1kHz) <input type="range" data-eq="mid" min="-15" max="15" step="0.5" value="0"></label>
+      <label>High (8kHz) <input type="range" data-eq="high" min="-15" max="15" step="0.5" value="0"></label>
+    </div>
+    <div class="rack" id="masterRack">
+      <h3>Master</h3>
+      <label>Master Volume <input type="range" id="masterGain" min="-60" max="6" step="0.5" value="0"></label>
+      <label>Limiter (dB) <input type="range" id="limiterThreshold" min="-24" max="0" step="1" value="-1"></label>
+      <div class="meters">
+        <div>LR Meter</div>
+        <progress id="meterL" max="1" value="0"></progress>
+        <progress id="meterR" max="1" value="0"></progress>
       </div>
     </div>
+  </section>
 
-    <!-- Mixer strips -->
-    <div class="p-3 rounded panel overflow-x-auto">
-      <div id="mixer" class="flex gap-3 min-w-[1100px]"></div>
-    </div>
+  <section class="mixer">
+    <!-- Channels are injected by JS -->
+  </section>
 
-    <div class="text-[10px] text-slate-400">UI-only demo (ไม่ใช้ React/JSX). เปิดไฟล์ index.html ก็เห็นเลย. ถ้าจะเชื่อม BLE ค่อยเพิ่มโค้ด.</div>
-  </div>
-
-<script>
-(function(){
-  const mixer = document.getElementById('mixer');
-
-  function stripEl(title, color){
-    const wrap = document.createElement('div');
-    wrap.className = "w-20 p-2 rounded cell text-[11px]";
-    wrap.innerHTML = \`
-      <div class="h-6 mb-1 rounded text-center font-semibold" style="background:\${color}33">\${title}</div>
-      <div class="h-24 mb-1 bg-[#0b0e12] rounded relative overflow-hidden">
-        <div class="absolute bottom-0 left-1 w-3 bg-green-500/70 meterR"></div>
-        <div class="absolute bottom-0 left-1 w-3 h-0.5 bg-rose-500 meterP"></div>
-      </div>
-      <div class="mb-1">
-        <div class="text-center">Pan</div>
-        <input type="range" min="0" max="1" step="0.001" class="w-full">
-      </div>
-      <div class="flex items-center justify-center mb-1"><input type="range" min="0" max="1" step="0.001" data-vertical class="fader"></div>
-      <div class="flex gap-1">
-        <button class="flex-1 rounded panel">Mute</button>
-        <button class="flex-1 rounded panel">FX</button>
-      </div>\`;
-    // Animate meters
-    const r = wrap.querySelector('.meterR');
-    const p = wrap.querySelector('.meterP');
-    function tick(){
-      const rms = Math.random()*100;
-      const pk  = Math.max(rms, Math.random()*100);
-      r.style.height = rms + "%";
-      p.style.bottom = pk + "%";
-    }
-    setInterval(tick, 120);
-    return wrap;
-  }
-
-  // Build 8 mono + 2 stereo + Master
-  const titles = ["MIC1","MIC2","MIC3","MIC4","MIC5","MIC6","MIC7","MIC8","ST1","ST2"];
-  titles.forEach((t,i)=> mixer.appendChild(stripEl(t, i<8?"#ef4444":"#22c55e")));
-
-  // Master section
-  const master = document.createElement('div');
-  master.className = "w-28 p-2 rounded cell text-[11px] ml-2";
-  master.innerHTML = \`
-    <div class="text-center font-semibold mb-2">Main LR</div>
-    <div class="flex items-end gap-2">
-      <div class="w-3 h-40 bg-slate-200 rounded relative overflow-hidden">
-        <div class="absolute bottom-0 left-0 right-0 bg-green-400 masterR"></div>
-        <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-rose-600 masterP"></div>
-      </div>
-      <div class="flex-1">
-        <div class="text-center text-[10px] mb-1">Master</div>
-        <input type="range" min="0" max="1" step="0.001" data-vertical class="w-full">
-        <div class="mt-1 text-center text-[10px]" id="dbread">0.0 dB</div>
-      </div>
-    </div>
-    <div class="mt-2">
-      <label class="flex items-center gap-2"><input type="checkbox" /> Limiter</label>
-      <input type="range" min="0" max="1" step="0.001" class="w-full">
-    </div>
-    <div class="mt-2 text-center">
-      <div class="font-semibold mb-1">FX Returns</div>
-      \${[1,2,3,4].map(n=>\`
-        <div class="mb-1 flex items-center gap-2">
-          <div class="text-[10px] w-8">FX \${n}</div>
-          <div class="flex-1"><input type="range" min="0" max="1" step="0.001" class="w-full"></div>
-        </div>\`).join('')}
-    </div>\`;
-  mixer.appendChild(master);
-
-  // animate master meters
-  const mr = master.querySelector('.masterR');
-  const mp = master.querySelector('.masterP');
-  mr.style.height = "0%"; mp.style.bottom = "0%";
-  setInterval(()=>{
-    const rms = Math.random()*100; const pk = Math.max(rms, Math.random()*100);
-    mr.style.height = rms + "%"; mp.style.bottom = pk + "%";
-  }, 120);
-
-  // Show a quick tip if opened as file://
-  const isFile = location.protocol === 'file:';
-  if(isFile){
-    console.log("เปิดแบบ file:// — แสดงผลได้แน่นอน (โหมดสาธิตไม่ใช้ Bluetooth).");
-  }
-})();
-</script>
+  <footer class="foot">
+    <div>วิ่งบน WebAudio + WebBluetooth (ต้องเปิดด้วย HTTPS หรือ localhost)</div>
+  </footer>
+</div>
+<script src="app.js"></script>
 </body>
 </html>
